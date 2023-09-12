@@ -6,7 +6,7 @@ def info():
 
 def cleanCode(file, options=[]):
 
-    outFile = './out.urcl'                                              # default output file
+    outFile = './output/out.urcl'                                              # default output file
     for c,v in enumerate(options):
         # TODO: add handling for the rest of the options                                 
         if v == '-o':
