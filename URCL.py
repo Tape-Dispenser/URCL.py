@@ -12,21 +12,23 @@ if __name__ == "__main__":
         print_info()
         exit()
     for i, arg in enumerate(sys.argv):
-        if i == 1:
+        if i == 0:
+            pass
+        elif i == 1:
             command = arg.lower()
         elif i == 2:
-            f = arg
+            if os.path.isfile(arg):
+                f = arg
+            else:
+                args.append(arg.lower())
         else:
             args.append(arg.lower())
 
 #check to see file exists
 
-if os.path.isfile(f):
+
     #parse command
-    if command == 'clean':
-        x = clean.cleanCode(f,args)
-        if x == 'error':
-            exit()
-else:
-    print(f'Error: file "{f}" does not exist.')
-    exit()
+if command == 'clean':
+    x = clean.cleanCode(f,args)
+    if x == 'error':
+        exit()

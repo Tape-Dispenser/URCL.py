@@ -1,23 +1,40 @@
-import urcl_rules
+import urcl_rules,os
 
 def info():
-    print('cleans code') # TODO: make this print actual info lmao
+    print('Cleans up urcl code and checks for errors')
+    print('Usage: URCL.py clean [code.urcl] [-options]')
+    print('Available options:')
+    print('\t-o <file_path> : declare output file path (default is URCL.py/output/out.urcl)')
+    print('\t-h : display this message')
     return
 
 def cleanCode(file, options=[]):
 
-    outFile = './output/out.urcl'                                              # default output file
-    for c,v in enumerate(options):
-        # TODO: add handling for the rest of the options                                 
-        if v == '-o':
+    outFile = './output/out.urcl'                                       # default output file
+    if file == "":                                                      # if file is blank just print info and exit
+        info()
+        return 'success'
+    
+    for c,v in enumerate(options):                          
+        if v.lower() == '-o':
             try:
-                outFile = options[c+1]
+                outFile = options[c+1]                                  # argument immediately after -o should be a file path
+                if not (os.path.isfile(outFile)):
+                    print('Error parsing command: -o flag used but no output path provided')
+                    return 'error'
             except IndexError:
                 print('Error parsing command: -o flag used but no output path provided')
                 return 'error'
-
-    with open(file, 'r') as f:
-        code = [line.rstrip('\n') for line in f]                        # strip newlines from each line in f, append each line to code
+        if v.lower() == '-h':
+            info()
+            return 'success'
+    print(file)
+    if os.path.isfile(file):
+        with open(file, 'r') as f:
+            code = [line.rstrip('\n') for line in f]                    # strip newlines from each line in f, append each line to code
+    else:
+        print('Error parsing command: no source file provided.')
+        return 'error'
 
     templist = []
     for i,line in enumerate(code):
@@ -27,8 +44,8 @@ def cleanCode(file, options=[]):
             if line[0] != '':                                           # make sure there is code before the comment
                 lineout = (line[0].strip(),i+1)                         # add original line number to output for more readable errors
                 templist.append(lineout)
-#                                                                           templist is structured as a list of tuples
-#                                                                           tuple is structured as ({line of code}, {original line number})
+#                                                                         templist is structured as a list of tuples
+#                                                                         tuple is structured as ({line of code}, {original line number})
 
     for i,line in enumerate(templist):
         if '/*' in line[0] or '*/' in line[0]:
