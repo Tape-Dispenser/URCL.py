@@ -43,6 +43,9 @@ def cleanCode(file, options=[]):
         for j,operand in enumerate(operands):
             operands[j] = operand.strip()                               # strip extra whitespace between operands
 
+        # the rest of this for loop is error detection
+        # TODO: check for errors in urcl code (invalid number or type of operands)
+
         # TODO: look at opcode variable and determine if it's a header or macro or something before assuming it's an operand
         try:
             correctOpCount = urcl_rules.urclOperationLengths[opcode]    # get expected operand count for opcode
@@ -52,7 +55,7 @@ def cleanCode(file, options=[]):
         except KeyError:
             pass
         
-        # TODO: check for errors in urcl code (invalid number or type of operands)
+        
 
         templist[i] = (f'{opcode} {" ".join(operands)}\n', line[1])     # add original line number back
 
