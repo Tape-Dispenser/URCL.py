@@ -1,6 +1,6 @@
 Command line syntax:
 
-<path_to_bad.py> [command] [file] [options]
+<path_to_bad.py> [command] [file] [options]\n
 <path_to_bad.py> [command] : returns info about command (not implemented)
 <path_to_bad.py> : returns info about u
 
