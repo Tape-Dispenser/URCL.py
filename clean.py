@@ -1,5 +1,7 @@
 import urcl_rules,os
 
+labelList = []
+
 def info():
     print('Cleans up urcl code and checks for errors')
     print('Usage: URCL.py clean [code.urcl] [-options]')
@@ -8,8 +10,67 @@ def info():
     print('\t-h : display this message')
     return
 
-def cleanCode(file, options=[]):
+def lexLine(line,i):
+    global labelList
 
+    pieces = line[0].split()                                # split line into a list of components (opcode and operands)
+    # detect what the line is (label, macro, dw, header, or instruction)
+    opcode = pieces[0].strip()                             
+    if opcode[0] == '.':
+        lineType = 'label'
+        labelEntry = (line[0], i)
+        labelList.append(labelEntry)
+    elif opcode[0] == '@':
+        lineType = 'macro'
+    elif opcode.lower() == 'dw':
+        lineType = 'dw'
+    elif opcode.lower() == 'bits':
+        lineType = 'header'
+    elif opcode.lower() == 'minreg':
+        lineType = 'header'
+    elif opcode.lower() == 'minheap':
+        lineType = 'header'
+    elif opcode.lower() == 'run':
+        lineType = 'header'
+    elif opcode.lower() == 'minstack':
+        lineType = 'header'
+    else:
+        try:
+            urcl_rules.urclOperationLengths[opcode.lower()]
+            lineType = 'instruction'
+        except KeyError:
+            print(f'Error on line {line[1]}: "{line[0]}": Unrecognized instruction "{opcode}"')
+            return 'error'
+    
+    # now do operand lexing
+    operands = []
+    tl = []
+    quotes = 0
+    operand = " ".join(pieces[1:])                                      # TODO: THIS NEEDS TO BE REWORKED FOR LIST DW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    try:
+        if operand[0] == '[':
+            operands.append(operand[1:-1])
+        else:
+            operands = operand.split()
+            for c,operand in enumerate(operands):
+                if operand == "'":
+                    try:
+                        if operands[c-1] == "'":
+                            tl.append("' '")
+                    except IndexError:
+                        pass
+                else:
+                    tl.append(operand)
+            operands = tl
+    except IndexError:
+        return (opcode,lineType,operands)
+
+    print(f'{lineType} : {opcode} {operands}')
+    return        
+
+
+def cleanCode(file, options=[]):
+    global labelList
     outFile = './output/out.urcl'                                       # default output file
     if file == "":                                                      # if file is blank just print info and exit
         info()
@@ -28,7 +89,7 @@ def cleanCode(file, options=[]):
         if v.lower() == '-h':
             info()
             return 'success'
-    print(file)
+
     if os.path.isfile(file):
         with open(file, 'r') as f:
             code = [line.rstrip('\n') for line in f]                    # strip newlines from each line in f, append each line to code
@@ -54,11 +115,13 @@ def cleanCode(file, options=[]):
             # TODO: actually support multiline comments lmao
 
     for i,line in enumerate(templist):
+        # TODO: replace this with the lex function once that's done
         pieces = line[0].split()                                        # split line into a list of components (opcode and operands)
         opcode = pieces[0].strip().lower()                              # seperate opcode from operands
         operands = pieces[1:]                                           # TODO: THIS NEEDS TO BE REWORKED FOR LIST DW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         for j,operand in enumerate(operands):
             operands[j] = operand.strip()                               # strip extra whitespace between operands
+        lexLine(line,i)
 
         # the rest of this for loop is error detection
         # TODO: check for errors in urcl code (invalid number or type of operands)
@@ -67,12 +130,12 @@ def cleanCode(file, options=[]):
         try:
             correctOpCount = urcl_rules.urclOperationLengths[opcode]    # get expected operand count for opcode
             if correctOpCount != len(operands):
-                print(f'Error on line {line[1]}: {line[0]}: Invalid operand count for instruction {opcode.upper()}, expected {correctOpCount}, got {len(operands)}')
+                print(f'Error on line {line[1]}: "{line[0]}": Invalid operand count for instruction {opcode.upper()}, expected {correctOpCount}, got {len(operands)}')
                 return 'error'
         except KeyError:
             pass
         
-        
+    
 
         templist[i] = (f'{opcode} {" ".join(operands)}\n', line[1])     # add original line number back
 
@@ -83,4 +146,7 @@ def cleanCode(file, options=[]):
     with open(outFile, 'w') as f:                                       # output cleaned code to file
         for line in templist:
             f.write(f'{line[0]}')                                       # original line number no longer needed (although some way to preserve this might be useful for debugging)
+    #print(labelList)
     return outFile                                                      # return output file for other functions to reference
+    
+
