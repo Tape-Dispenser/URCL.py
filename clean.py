@@ -1,4 +1,4 @@
-import urcl_rules,os
+import urcl_rules,os,re
 
 labelList = []
 
@@ -44,29 +44,20 @@ def lexLine(line,i):
     
     # now do operand lexing
     operands = []
-    tl = []
-    quotes = 0
-    operand = " ".join(pieces[1:])                                      # TODO: THIS NEEDS TO BE REWORKED FOR LIST DW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    operandRegex = r"'.'|[.$%@#RrMm][A-Za-z0-9]+"
+    operandsString = " ".join(pieces[1:])                                     
     try:
-        if operand[0] == '[':
-            operands.append(operand[1:-1])
+        if operandsString[0] == '[':
+            operands.append(operandsString[1:-1])
         else:
-            operands = operand.split()
-            for c,operand in enumerate(operands):
-                if operand == "'":
-                    try:
-                        if operands[c-1] == "'":
-                            tl.append("' '")
-                    except IndexError:
-                        pass
-                else:
-                    tl.append(operand)
-            operands = tl
+            result = re.finditer(operandRegex, operandsString)
+            for x in result:
+                operands.append(x.group(0))
     except IndexError:
         return (opcode,lineType,operands)
 
     print(f'{lineType} : {opcode} {operands}')
-    return        
+    return (opcode,lineType,operands)
 
 
 def cleanCode(file, options=[]):
@@ -115,13 +106,11 @@ def cleanCode(file, options=[]):
             # TODO: actually support multiline comments lmao
 
     for i,line in enumerate(templist):
-        # TODO: replace this with the lex function once that's done
-        pieces = line[0].split()                                        # split line into a list of components (opcode and operands)
-        opcode = pieces[0].strip().lower()                              # seperate opcode from operands
-        operands = pieces[1:]                                           # TODO: THIS NEEDS TO BE REWORKED FOR LIST DW!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        for j,operand in enumerate(operands):
-            operands[j] = operand.strip()                               # strip extra whitespace between operands
-        lexLine(line,i)
+        
+        lexResult = lexLine(line,i)
+        opcode = lexResult[0]
+        lineType = lexResult[1]
+        operands = lexResult[2]
 
         # the rest of this for loop is error detection
         # TODO: check for errors in urcl code (invalid number or type of operands)
