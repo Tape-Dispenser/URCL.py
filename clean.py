@@ -44,7 +44,7 @@ def lexLine(line,i):
     
     # now do operand lexing
     operands = []
-    operandRegex = r"'.'|[.$%@#RrMm]?[A-Za-z0-9-_]+"
+    operandRegex = r"'.'|[.$%@#RrMm]?[A-Za-z0-9-_]+|~[+-]?[0-9]+"
     operandsString = " ".join(pieces[1:])                                     
     try:
         if operandsString[0] == '[':
