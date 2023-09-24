@@ -12,6 +12,8 @@ def info():
 
 def lexLine(line,i):
     global labelList
+    # technically this does both parsing and lexing but i don't really care
+    # i is the original line number (only used in error messages)
 
     pieces = line[0].split()                                # split line into a list of components (opcode and operands)
     # detect what the line is (label, macro, dw, header, or instruction)
@@ -44,7 +46,7 @@ def lexLine(line,i):
     
     # now do operand lexing
     operands = []
-    operandRegex = r"'.'|[.$%@#RrMm]?[A-Za-z0-9-_]+|~[+-]?[0-9]+"
+    operandRegex = r"'.'|'\\.'|[.$%@#RrMm]?[A-Za-z0-9-_]+|~[+-]?[0-9]+"
     operandsString = " ".join(pieces[1:])                                     
     try:
         if operandsString[0] == '[':
