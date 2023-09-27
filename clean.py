@@ -66,16 +66,6 @@ def clean(file, options=[]):
         chars[key] = char
         codeString = codeString.replace(char, key, 1) # only replace 1 instance
 
-    # find and remove multiline comments
-    matches = re.finditer(r'\/\*.*?\*\/', codeString, flags=re.DOTALL)
-    for m in matches:
-        text = m.group(0)
-        # prevent putting two instructions on the same line
-        if "\n" in text:
-            codeString = codeString.replace(text, "\n")
-        else:
-            codeString = codeString.replace(text, "")
-
 
     codeList = codeString.split("\n")  
 
@@ -98,7 +88,16 @@ def clean(file, options=[]):
                 lines.append(outLine) 
 
     codeString = "\n".join(lines)
-    #print(codeString)
+    
+    # find and remove multiline comments
+    matches = re.finditer(r'\/\*.*?\*\/', codeString, flags=re.DOTALL)
+    for m in matches:
+        text = m.group(0)
+        # prevent putting two instructions on the same line
+        if "\n" in text:
+            codeString = codeString.replace(text, "\n")
+        else:
+            codeString = codeString.replace(text, "")
 
     # put chars and strings back
     # it may be smart to convert these to decimal immediates while i'm at it
