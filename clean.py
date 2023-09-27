@@ -1,74 +1,22 @@
-import urcl_rules,os,re
-
-labelList = []
+import os,re
 
 def info():
-    print('Cleans up urcl code and checks for errors')
-    print('Usage: URCL.py clean [code.urcl] [-options]')
+    print('Cleans URCL code')
+    print('Removes comments, whitespace, and more!')
     print('Available options:')
     print('\t-o <file_path> : declare output file path (default is URCL.py/output/out.urcl)')
     print('\t-h : display this message')
+    print('\t-e <command> : command to run next in chain')
     return
 
-def lexLine(line,i):
-    global labelList
-    # technically this does both parsing and lexing but i don't really care
-    # i is the original line number (only used in error messages)
+def clean(file, options=[]):
 
-    pieces = line[0].split()                                # split line into a list of components (opcode and operands)
-    # detect what the line is (label, macro, dw, header, or instruction)
-    opcode = pieces[0].strip()                             
-    if opcode[0] == '.':
-        lineType = 'label'
-        labelEntry = (line[0], i)
-        labelList.append(labelEntry)
-    elif opcode[0] == '@':
-        lineType = 'macro'
-    elif opcode.lower() == 'dw':
-        lineType = 'dw'
-    elif opcode.lower() == 'bits':
-        lineType = 'header'
-    elif opcode.lower() == 'minreg':
-        lineType = 'header'
-    elif opcode.lower() == 'minheap':
-        lineType = 'header'
-    elif opcode.lower() == 'run':
-        lineType = 'header'
-    elif opcode.lower() == 'minstack':
-        lineType = 'header'
-    else:
-        try:
-            urcl_rules.urclOperationLengths[opcode.lower()]
-            lineType = 'instruction'
-        except KeyError:
-            print(f'Error on line {line[1]}: "{line[0]}": Unrecognized instruction "{opcode}"')
-            return 'error'
-    
-    # now do operand lexing
-    operands = []
-    operandRegex = r"'.'|'\\.'|[.$%@#RrMm]?[A-Za-z0-9-_]+|~[+-]?[0-9]+"
-    operandsString = " ".join(pieces[1:])                                     
-    try:
-        if operandsString[0] == '[':
-            operands.append(operandsString[1:-1])
-        else:
-            result = re.finditer(operandRegex, operandsString)
-            for x in result:
-                operands.append(x.group(0))
-    except IndexError:
-        return (opcode,lineType,operands)
-
-    print(f'{lineType} : {opcode} {operands}')
-    return (opcode,lineType,operands)
-
-
-def cleanCode(file, options=[]):
-    global labelList
     outFile = './output/out.urcl'                                       # default output file
     if file == "":                                                      # if file is blank just print info and exit
         info()
         return 'success'
     
+    # argument handling loop
     for c,v in enumerate(options):                          
         if v.lower() == '-o':
             try:
@@ -82,62 +30,76 @@ def cleanCode(file, options=[]):
         if v.lower() == '-h':
             info()
             return 'success'
-
+        if v.lower() == '-e':
+            try:
+                endCommand = options[c+1]
+            except IndexError:
+                print('Error parsing command: -e flag used but no command provided')
+                return 'error'
+    
+    # open file and read it as string
     if os.path.isfile(file):
         with open(file, 'r') as f:
-            code = [line.rstrip('\n') for line in f]                    # strip newlines from each line in f, append each line to code
+            codeString = f.read()
     else:
         print('Error parsing command: no source file provided.')
         return 'error'
 
-    templist = []
-    for i,line in enumerate(code):
+    # jank
+    # finds all strings in urcl code and replaces them with a key value (&1, &2, etc.)
+    # once all strings are gone then cleaning can happen
+    # strings have to be replaced at the end of the code
+    strings = {}
+    matches = re.finditer(r'".*?"', codeString)
+    for count,m in enumerate(matches):
+        string = m.group(0)
+        key = f"&S_{count}"
+        strings[key] = string
+        codeString = codeString.replace(string, key, 1) # only replace 1 instance
+
+    # i do the same with chars
+    chars = {}
+    matches = re.finditer(r"'.*?'", codeString)
+    for count,m in enumerate(matches):
+        char = m.group(0)
+        key = f"&C_{count}"
+        chars[key] = char
+        codeString = codeString.replace(char, key, 1) # only replace 1 instance
+
+    codeString = re.sub(r'\/\*.*?\*\/', '', codeString, flags=re.DOTALL)  # remove all non-overlapping instances of multiline comments
+
+    codeList = codeString.split("\n")  
+
+    lines = []
+    for i,line in enumerate(codeList):
         line = line.strip()                                             # remove leading and trailing whitespace
         if line != '':                                                  # check to make sure line isn't blank
             line = line.split('//')                                     # anything after a comment is useless
             if line[0] != '':                                           # make sure there is code before the comment
-                lineout = (line[0].strip(),i+1)                         # add original line number to output for more readable errors
-                templist.append(lineout)
-#                                                                         templist is structured as a list of tuples
-#                                                                         tuple is structured as ({line of code}, {original line number})
+                lineout = line[0].strip()                               # add original line number to output for more readable errors
+                lineNum = i+1
+                
+                lineList = line[0].split(" ")                           # line[0] is everything before the comment
+                outList = []
+                for piece in lineList:
+                    piece = piece.strip()
+                    if piece != '':
+                        outList.append(piece)
+                outLine = " ".join(outList)
+                lines.append(outLine) 
 
-    for i,line in enumerate(templist):
-        if '/*' in line[0] or '*/' in line[0]:
-            print(f'ERROR ON LINE {line[1]}: {line[0]}: Multiline Comments Not Supported!')
-            return 'error'
-            # TODO: actually support multiline comments lmao
+    codeString = "\n".join(lines)
+    #print(codeString)
 
-    for i,line in enumerate(templist):
-        
-        lexResult = lexLine(line,i)
-        opcode = lexResult[0]
-        lineType = lexResult[1]
-        operands = lexResult[2]
-
-        # the rest of this for loop is error detection
-        # TODO: check for errors in urcl code (invalid number or type of operands)
-
-        # TODO: look at opcode variable and determine if it's a header or macro or something before assuming it's an operand
-        try:
-            correctOpCount = urcl_rules.urclOperationLengths[opcode]    # get expected operand count for opcode
-            if correctOpCount != len(operands):
-                print(f'Error on line {line[1]}: "{line[0]}": Invalid operand count for instruction {opcode.upper()}, expected {correctOpCount}, got {len(operands)}')
-                return 'error'
-        except KeyError:
-            pass
-        
+    # put chars and strings back
+    # it may be smart to convert these to decimal immediates while i'm at it
     
+    for key in strings:
+        codeString = codeString.replace(key,strings[key])
 
-        templist[i] = (f'{opcode} {" ".join(operands)}\n', line[1])     # add original line number back
+    for key in chars:
+        codeString = codeString.replace(key,chars[key])
 
-
-
-    # TODO: Decide what macros i want to implement and then handle them (this may have to be handled in a different program)
-   
     with open(outFile, 'w') as f:                                       # output cleaned code to file
-        for line in templist:
-            f.write(f'{line[0]}')                                       # original line number no longer needed (although some way to preserve this might be useful for debugging)
-    #print(labelList)
+        f.write(codeString)                                      
     return outFile                                                      # return output file for other functions to reference
-    
-
