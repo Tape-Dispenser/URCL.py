@@ -29,6 +29,6 @@ if __name__ == "__main__":
 
     #parse command
 if command == 'clean':
-    x = clean.cleanCode(f,args)
+    x = clean.clean(f,args)
     if x == 'error':
         exit()
