@@ -85,7 +85,7 @@ def clean(file, options=[]):
         if line != '':                                                  # check to make sure line isn't blank
             line = line.split('//')                                     # anything after a comment is useless
             if line[0] != '':                                           # make sure there is code before the comment
-                lineout = line[0].strip()                               # add original line number to output for more readable errors
+                line[0] = line[0].strip()                               # add original line number to output for more readable errors
                 lineNum = i+1
                 
                 lineList = line[0].split(" ")                           # line[0] is everything before the comment
