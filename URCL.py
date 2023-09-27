@@ -1,4 +1,4 @@
-import sys,os,clean
+import sys,os,clean,lex,parse
 
 def print_info():
     print('bruh more args pls') # TODO: make this print actual info
@@ -20,15 +20,29 @@ if __name__ == "__main__":
             if os.path.isfile(arg):
                 f = arg
             else:
-                args.append(arg.lower())
+                args.append(arg)
         else:
-            args.append(arg.lower())
+            if os.path.isfile(arg):
+                args.append(arg)
+            else:
+                args.append(arg)
 
-#check to see file exists
 
+#parse command
 
-    #parse command
 if command == 'clean':
     x = clean.clean(f,args)
+    if x == 'error':
+        exit()
+    if os.path.isfile(x):
+        print(f"file successfully cleaned and outputted to \"{x}\"")
+
+elif command == 'lex':
+    x = lex.lex(f,args)
+    if x == 'error':
+        exit()
+
+elif command == 'parse':
+    x = parse.parse(f,args)
     if x == 'error':
         exit()

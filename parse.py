@@ -1,5 +1,12 @@
-import re,urcl_rules
+import re,urcl_rules,os
 labelList = []
+
+def info():
+    print('Parses URCL code')
+    print('Available options:')
+    print('\t-h : display this message')
+    print('\t-e <command> : command to run next in chain')
+    return
 
 def parseLine(opcode, operands, originalLineNum, realLineNum):
     global labelList
@@ -96,4 +103,34 @@ def parseLine(opcode, operands, originalLineNum, realLineNum):
 
             print(f'Error: Unrecognized operand "{operand}" on line {originalLineNum}')
             return('error')
-    return (outputOperands)
+    return (linetype, outputOperands)
+
+def parse(file, options=[]):
+    outFile = './output/out.urcl'                                       # default output file
+    if file == "":                                                      # if file is blank just print info and exit
+        info()
+        return 'success'
+    
+    # argument handling loop
+    for c,v in enumerate(options):                          
+        if v.lower() == '-h':
+            info()
+            return 'success'
+        if v.lower() == '-e':
+            try:
+                endCommand = options[c+1]
+            except IndexError:
+                print('Error parsing command: -e flag used but no command provided')
+                return 'error'
+    
+    # open file and read it as string
+    if os.path.isfile(file):
+        with open(file, 'r') as f:
+            lines = [line.rstrip('\n') for line in f]                    # strip newlines from each line in f, append each line to code
+    else:
+        print('Error parsing command: no source file provided.')
+        return 'error'
+    
+    for lineNum,line in enumerate(lines):
+        #linenum is the actual urcl line, and can be used for relative calculations
+        pass
