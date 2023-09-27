@@ -66,7 +66,14 @@ def clean(file, options=[]):
         chars[key] = char
         codeString = codeString.replace(char, key, 1) # only replace 1 instance
 
-    codeString = re.sub(r'\/\*.*?\*\/', '', codeString, flags=re.DOTALL)  # remove all non-overlapping instances of multiline comments
+    matches = re.finditer(r'\/\*.*?\*\/', codeString, flags=re.DOTALL)
+    for m in matches:
+        text = m.group(0)
+        if "\n" in text:
+            codeString = codeString.replace(text, "\n")
+        else:
+            codeString = codeString.replace(text, "")
+
 
     codeList = codeString.split("\n")  
 
