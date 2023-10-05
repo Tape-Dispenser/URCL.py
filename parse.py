@@ -133,4 +133,4 @@ def parse(file, options=[]):
     
     for lineNum,line in enumerate(lines):
         #linenum is the actual urcl line, and can be used for relative calculations
-        pass
+        parsedLine = parseLine()
