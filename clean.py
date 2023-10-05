@@ -45,7 +45,7 @@ def clean(file, options=[]):
         print('Error parsing command: no source file provided.')
         return 'error'
 
-    # jank
+
     # finds all strings in urcl code and replaces them with a key value (&1, &2, etc.)
     # once all strings are gone then cleaning can happen
     # strings have to be replaced at the end of the code
@@ -71,11 +71,16 @@ def clean(file, options=[]):
 
     lines = []
     for i,line in enumerate(codeList):
+        
+        # i'm gonna come back and rewrite this in a way that's easy to 
         line = line.strip()                                             # remove leading and trailing whitespace
+        
+        # i'm gonna come back and rewrite this 
+
         if line != '':                                                  # check to make sure line isn't blank
             line = line.split('//')                                     # anything after a comment is useless
-            if line[0] != '':                                           # make sure there is code before the comment
-                line[0] = line[0].strip()                               # add original line number to output for more readable errors
+            if line[0].strip() != '':                                   # make sure there is code before the comment
+                line[0] = line[0].strip()                               
                 lineNum = i+1
                 
                 lineList = line[0].split(" ")                           # line[0] is everything before the comment
@@ -85,7 +90,7 @@ def clean(file, options=[]):
                     if piece != '':
                         outList.append(piece)
                 outLine = " ".join(outList)
-                lines.append(outLine) 
+                lines.append(f"{outLine} // {lineNum}") # add original line number to output for more readable errors (TODO: make this an option)
 
     codeString = "\n".join(lines)
     
@@ -103,10 +108,39 @@ def clean(file, options=[]):
     # it may be smart to convert these to decimal immediates while i'm at it
     
     for key in strings:
+        immString = strings[key][1:-1]                                    # remove quote marks
+        
         codeString = codeString.replace(key,strings[key])
 
     for key in chars:
         codeString = codeString.replace(key,chars[key])
+    
+    codeList = codeString.split("\n")  
+
+    lines = []
+    for i,line in enumerate(codeList):
+        
+        # i'm gonna come back and rewrite this in a way that's easy to 
+        line = line.strip()                                             # remove leading and trailing whitespace
+        
+        # i'm gonna come back and rewrite this 
+
+        if line != '':                                                  # check to make sure line isn't blank
+            line = line.split('//')                                     # anything after a comment is useless
+            if line[0].strip() != '':                                   # make sure there is code before the comment
+                line[0] = line[0].strip()                               
+                lineNum = i+1
+                
+                lineList = line[0].split(" ")                           # line[0] is everything before the comment
+                outList = []
+                for piece in lineList:
+                    piece = piece.strip()
+                    if piece != '':
+                        outList.append(piece)
+                outLine = " ".join(outList)
+                lines.append(f"{outLine} // {lineNum}") # add original line number to output for more readable errors (TODO: make this an option)
+
+    codeString = "\n".join(lines)
 
     with open(outFile, 'w') as f:                                       # output cleaned code to file
         f.write(codeString)                                      
