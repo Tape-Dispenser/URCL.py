@@ -66,7 +66,6 @@ def clean(file, options=[]):
         chars[key] = char
         codeString = codeString.replace(char, key, 1) # only replace 1 instance
 
-
     codeList = codeString.split("\n")  
 
     lines = []
@@ -107,13 +106,39 @@ def clean(file, options=[]):
     # put chars and strings back
     # it may be smart to convert these to decimal immediates while i'm at it
     
+    
     for key in strings:
         immString = strings[key][1:-1]                                    # remove quote marks
-        
-        codeString = codeString.replace(key,strings[key])
-
+        immList = []
+        for char in immString:
+            immList.append(str(ord(char)))                              
+        listString = f"[{' '.join(immList)}]"                               # this should output an array of decimal immediates equivalent to the bytes of the given string
+        codeString = codeString.replace(key, listString)
+ 
     for key in chars:
-        codeString = codeString.replace(key,chars[key])
+        immChar = chars[key][1:-1]                                    # remove quote marks
+        if (len(immChar) == 2)&(immChar[0] == "\\"):                    # replace escape codes
+            match immChar:
+                case "\\n":
+                    imm = "10" # ascii code for newline
+                case "\\r":
+                    imm = "13"
+                case "\\t":
+                    imm = "9"
+                case "\\b":
+                    imm = "8"
+                case "\\f":
+                    imm = "12"
+                case "\\v":
+                    imm = "11"
+                case "\\0":
+                    imm = "0"
+                case _:
+                    print(f"invalid escape code \"{immChar}\"")
+                    return ('error')
+        else:
+            imm = str(ord(immChar))
+        codeString = codeString.replace(key, imm)
     
     codeList = codeString.split("\n")  
 

@@ -1,4 +1,5 @@
-import sys,os,clean,lex,parse
+import sys,os,time
+import clean,lex,parse
 
 def print_info():
     print('bruh more args pls') # TODO: make this print actual info
@@ -31,18 +32,29 @@ if __name__ == "__main__":
 #parse command
 
 if command == 'clean':
+    startTime = time.perf_counter()
     x = clean.clean(f,args)
     if x == 'error':
         exit()
     if os.path.isfile(x):
-        print(f"file successfully cleaned and outputted to \"{x}\"")
+        endTime = time.perf_counter()
+        print(f"file successfully cleaned and outputted to \"{x}\" in {endTime-startTime} seconds.")
+
 
 elif command == 'lex':
+    startTime = time.perf_counter()
     x = lex.lex(f,args)
     if x == 'error':
         exit()
+    if os.path.isfile(x):
+        endTime = time.perf_counter()
+        print(f"file successfully lexed and outputted to \"{x}\" in {endTime-startTime} seconds.")
 
 elif command == 'parse':
+    startTime = time.perf_counter()
     x = parse.parse(f,args)
     if x == 'error':
         exit()
+    if os.path.isfile(x):
+        endTime = time.perf_counter()
+        print(f"file successfully parsed and outputted to \"{x}\" in {endTime-startTime} seconds.")
