@@ -1,6 +1,8 @@
 Command line syntax:
 
 ```
+cd <directory to project root folder>
+
 ./URCL.py [command] [file] [options]
 ./URCL.py [command] : returns info about command
 ./URCL.py : returns info about toolkit
