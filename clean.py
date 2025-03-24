@@ -1,8 +1,29 @@
-import os,re,base64
+import os,re,ast
 import urcl_rules
+#import numpy
+
+compiler_extras = True
 
 labelDict = {}
 macroDict = {}
+
+operandRegexDict = {
+    r'[rR$][-+]?[0-9]+'  : "register",
+    r'[-+]?[0-9]+'       : "decimal immediate",
+    r'\.[a-zA-Z0-9-_]+'  : "label",
+    r'~[+-]?[0-9]+'      : "relative address",
+    r'%[a-zA-Z0-9-_]+'   : "port",
+    r'@[a-zA-Z0-9-_]+'   : "macro",
+    r'[mM#][0-9]+'       : "heap pointer",
+
+    r'0[xX][0-9a-fA-F]+' : "hex immediate",
+    r'0[bB][01]+'        : "binary immediate",
+
+    r'SP'                : "stack pointer",
+    r'PC'                : "program counter",    
+}
+
+
 escapeCodeDict = {
     "\\b":8,
     "\\t":9,
@@ -25,33 +46,116 @@ class Opcode:
         self.string = str
     def __str__(self):
         return self.string
+    
+    def __bytes__(self):
+        self.data['string'] = self.string
+        self.data['type'] = self.type
+        return str(self.data).encode('utf-8')
+    
+    def fromBase64(self, data_bytes):
+        self.data = ast.literal_eval(data_bytes.decode('utf-8'))
+        self.string = self.data['string']
+        self.type = self.data['type']
 
 class Operand:
     string = ""
     type = ""
 
+    data = {
+        'string': "",
+        'type': ""
+    }
+
     def __init__(self, str):
         self.string = str
+    def __init__(self, str, optype):
+        self.string = str
+        self.type = optype
     def __str__(self):
         return self.string
+    
+    def __bytes__(self):
+        self.data['string'] = self.string
+        self.data['type'] = self.type
+        return str(self.data).encode('utf-8')
+    
+    def fromBase64(self, data_bytes):
+        self.data = ast.literal_eval(data_bytes.decode('utf-8'))
+        self.string = self.data['string']
+        self.type = self.data['type']
 
 class Line:
-        
-    string = ""
-    tokens = []
-    originalLineNum = 0
+    string = ''
+    linetype = 'unknown'
+    opcode = 'unknown'
+    
+    ogLineNum = 0
     realLineNum = 0
-    opcode = Opcode("")
+
     operands = []
+    tokens = []
+
+    data = {
+        'string': '',
+        'linetype': 'unknown',
+        'opcode': 'unknown',
+
+        'tokens': [],
+        'operands': [],
+        
+        'ogLineNum': 0,
+        'realLineNum': 0
+    }
     
+
     
-    
-    def __init__(self, line, lineNum):
+
+    def __init__(self, line:str, lineNum:int):
         self.string = line
-        self.originalLineNum = lineNum
+        self.ogLineNum = lineNum
+    
+
     def __str__(self):
         return self.string
     
+
+    def __bytes__(self):
+
+        self.data['string'] = self.string
+        self.data['linetype'] = self.linetype
+        self.data['tokens'] = self.tokens
+        self.data['ogLineNum'] = self.ogLineNum
+        self.data['realLineNum'] = self.realLineNum
+
+        if type(self.opcode) == Opcode:
+            self.data['opcode'] = bytes(self.opcode)
+        else:
+            self.data['opcode'] = self.opcode
+
+        #for operand in self.operands:
+        #    if type(operand) == Operand:
+        #        self.data['operands'].append(bytes(operand))
+        #    else:
+        #        self.data['operands'].append(operand)
+        self.data['operands'] = [bytes(operand) if (type(operand) == Operand) else operand for operand in self.operands]
+
+        return str(self.data).encode('utf-8')
+        #TODO: encode operands and opcodes properly
+    
+    def fromBytes(self, line_bytes):
+        self.data = ast.literal_eval(line_bytes.decode('utf-8'))
+        # TODO: decode operands and opcodes
+        self.string = self.data['string']
+        self.linetype = self.data['linetype']
+        self.opcode = self.data['opcode']
+        self.tokens = self.data['tokens']
+        self.operands = self.data['operands']
+        self.ogLineNum = self.data['ogLineNum']
+        self.realLineNum = self.data['realLineNum']
+    
+
+
+
     def lex(self):
         opcode = ""
         operands = []
@@ -62,162 +166,128 @@ class Line:
             opcode = pieces[0].strip()      # pretty self-explanitory.
     
             # now do operand lexing
-            inList = False
             operands = []
             listRegex = r"\[.*?\]"
             operandRegex = r"'.'|'..'|[.$%@#RrMm]?[A-Za-z0-9-_]+|~[+-]?[0-9]+"
             operandsString = " ".join(pieces[1:])
+            isList = False # this might be useful one day
             result = re.fullmatch(listRegex, operandsString)
             if type(result) == re.match:
                 operandsString = operandsString[1:-1]
-                inList = True                                
+                isList = True                                
             try:   
                 result = re.finditer(operandRegex, operandsString)
                 for x in result:
                     operands.append(x.group(0))
             except IndexError:
                 pass
-            if inList:
-                pass # this seemed like it might be useful some time    
-        self.tokens = operands.insert(0, opcode)
+        operands.insert(0, opcode)
+        self.tokens = operands
 
     def parse(self):
-        opcode = self.tokens[0]
-        operands = self.tokens[1:]
     
         global labelDict,macroDict
 
         outputOperands = []
 
-        for operand in operands:
-            if opcode[0] == '.':
-                linetype = 'label'
-                labelEntry = (opcode, self.originalLineNum)
-                labelDict.append(labelEntry)
-            elif opcode[0] == '@':
-                linetype = 'macro'
-            elif opcode.lower() == 'dw':
-                linetype = 'dw'
-            elif opcode.lower() == 'bits':
-                linetype = 'header'
-            elif opcode.lower() == 'minreg':
-                linetype = 'header'
-            elif opcode.lower() == 'minheap':
-                linetype = 'header'
-            elif opcode.lower() == 'run':
-                linetype = 'header'
-            elif opcode.lower() == 'minstack':
-                linetype = 'header'
-            else:
+        match self.tokens[0][0], self.tokens[0].lower():
+            case ('.', *tok):
+                self.linetype = 'label'
                 try:
-                    urcl_rules.urclOperationLengths[opcode.lower()]
-                    linetype = 'instruction'
+                    labelDict[tok[0]]
+                    raise Exception(f'URCL Error on line {self.ogLineNum}: Duplicate label name "{tok}"')
                 except KeyError:
-                    print(f'Error on line {self.originalLineNum}: "{f"{opcode} {operand}"}": Unrecognized instruction "{opcode}"')
-                    return 'error'
+                    labelDict[tok[0]] = self.ogLineNum
+            case ('@', *tok):
+                self.linetype = 'macro'
+                try:
+                    macroDict[tok]
+                    raise Exception(f'URCL Error on line {self.ogLineNum}: Duplicate label name "{tok}"')
+                except KeyError:
+                    macroDict[tok] = self.ogLineNum
+            case (*char, 'dw'):
+                self.linetype = 'dw'
+            case (*char, 'bits'):
+                self.linetype = 'header'
+            case (*char, 'minreg'):
+                self.linetype = 'header'
+            case (*char, 'minheap'):
+                self.linetype = 'header'
+            case (*char, 'run'):
+                self.linetype = 'header'
+            case (*char, 'minstack'):
+                self.linetype = 'header'
+            case _:
+                try:
+                    urcl_rules.urclOperationLengths[self.tokens[0].lower()]
+                    self.linetype = 'instruction'
+                except KeyError:
+                    raise Exception(f'Error on line {self.ogLineNum}: "{self.string}": Unrecognized instruction "{self.tokens[0]}"')
 
-            if linetype == 'instruction':
 
-                #TODO : make this a pattern maching thingy
+        for operand in self.tokens[1:]:
+            operand = operand.strip()
+            validOperand = False
+            for index,pattern in enumerate(operandRegexDict):
+                regex = re.fullmatch(pattern, operand)
+                
+                #print(f"{pattern} {operand} {regex}")
+                
+                if type(regex) == re.Match:
+                    validOperand = True
+                    opType = operandRegexDict[pattern]
+                    outputOperands.append(Operand(operand, opType))
+                    break
+
             
-                regex = re.fullmatch(r'~[+-]?[0-9]+', operand)              # check for relative address
-                if type(regex) == re.match:
-                    outputOperands.append( (operand,'relative address') )
-                    continue
-            
-                regex = re.fullmatch(r'[rR$][-+]?[0-9]+', operand)               # check for register
-                if type(regex) == re.match:
-                    outputOperands.append( (operand,'register') )
-                    continue
+            if not validOperand:
+                raise Exception(f'Error on line {self.ogLineNum}: "{self.string}": Unrecognized operand "{operand}"')
+            # TODO: check if operand labels and macros are valid (this probably has to be done in a different Line function)
+        self.operands = outputOperands
 
-                regex = re.fullmatch(r'0[xX][0-9]+', operand)               # check for hex immediate    
-                if type(regex) == re.match:
-                    outputOperands.append( (operand,'hex immediate') )
-                    continue
-
-                regex = re.fullmatch(r'0[bB][01]+', operand)                # check for binary immediate
-                if type(regex) == re.match:
-                    outputOperands.append( (a,'binary immediate') )
-                    continue
-            
-                regex = re.fullmatch(r'[-+]?[0-9]+', operand)                    # check for decimal immediate
-                if type(regex) == re.match:
-                    outputOperands.append( (operand,'decimal immediate') )
-                    continue
-
-                regex = re.fullmatch(r'\'.\'', operand)                     # check for character immediate
-                if type(regex) == re.match:
-                    a = ord(operand[1])
-                    outputOperands.append( (a,'immediate') )
-                    continue
-
-                regex = re.fullmatch(r'\.[a-zA-Z0-9-_]', operand)           # check for labels, check that label is defined
-                if type(regex) == re.match:
-                    try:
-                        labelDict[operand]
-                        outputOperands.append(operand, '')
-                        continue
-                    except ValueError:
-                        print(f'Error: Undefined label "{operand}" referenced on line {self.originalLineNum}')
-                        return('error')
-
-                regex = re.fullmatch(r'[mM#][0-9]+', operand)               # check for heap pointer
-                if type(regex) == re.match:
-                    outputOperands.append( (operand,'heap pointer') )
-                    continue
-
-                regex = re.fullmatch(r'%[a-zA-Z0-9-_]', operand)            # check for port
-                if type(regex) == re.match:
-                    outputOperands.append( (operand, 'port') )
-                    continue
-
-                regex = re.fullmatch(r'@[a-zA-Z0-9-_]', operand)            # check for macro
-                if type(regex) == re.match:
-                    # TODO: implement something similar to labels for keeping track of and detecting undefined macros
-                    outputOperands.append( (operand, 'macro') )
-                    continue
-
-                print(f'Error: Unrecognized operand "{operand}" on line {self.originalLineNum}')
-                return('error')
-        return (linetype, outputOperands)
-        
 
 def info():
     print('Cleans URCL code')
-    print('Removes comments, whitespace, and more!')
+    print('')
     print('Available options:')
-    print('\t-o <file_path> : declare output file path (default is URCL.py/output/out.urcl)')
+    print('\t--o <file_path> : declare output file path (default is URCL.py/output/out.urcl)')
+    print('\t--n <command> : next URCL.py command to run in chain (NOT IMPLEMENTED)')
+    print('')
     print('\t-h : display this message')
-    print('\t-e <command> : command to run next in chain')
+    print('\t-c : disable extra lexing and parsing info for compiler')
     return
 
 def clean(file, options=[]):
 
+    global compiler_extras, labelDict, macroDict
+
     outFile = './output/out.urcl'                                       # default output file
     if file == "":                                                      # if file is blank just print info and exit
         info()
-        return 'success'
+        return
     
     # argument handling loop
+    endCommand = ""
     for c,v in enumerate(options):                          
-        if v.lower() == '-o':
+        if v.lower() == '--o':
             try:
-                outFile = options[c+1]                                  # argument immediately after -o should be a file path
+                outFile = options[c+1].strip()                                  # argument immediately after -o should be a file path
                 if not (os.path.isfile(outFile)):
-                    print('Error parsing command: -o flag used but no output path provided')
-                    return 'error'
+                    raise Exception(f'Error parsing command: "{outFile}" is not a valid file path')  
             except IndexError:
-                print('Error parsing command: -o flag used but no output path provided')
-                return 'error'
+                raise Exception('Error parsing command: -o flag used but no output path provided')
+        
         if v.lower() == '-h':
             info()
-            return 'success'
+            return
+        if v.lower() == '-c':
+            compiler_extras = False
+
         if v.lower() == '-e':
             try:
                 endCommand = options[c+1]
             except IndexError:
-                print('Error parsing command: -e flag used but no command provided')
-                return 'error'
+                raise Exception('Error parsing command: -e flag used but no command provided')
     
     # open file and read it as string
     if os.path.isfile(file):
@@ -319,21 +389,45 @@ def clean(file, options=[]):
         else:
             imm = str(ord(immChar))
         codeString = codeString.replace(key, imm)
-    
+
+    # cleaning done, now all that's left to do is output (and optionally lex and parse code)
+
     codeList = codeString.split("\n")
 
     lines = []
-    
-    for i,line in enumerate(codeList):
+
+    for index,line in enumerate(codeList):
+        line = line.strip()
         temp = line.split("//")
         if temp[0].strip() != '':
             lines.append(Line(temp[0].strip(),int(temp[1])))
-    for line in lines:
-        # lexing time :)
-        line.lex()
 
-    codeString = "\n".join([str(line)for line in lines]) # some cool one line shit i learned a couple years ago
+    
+
+
+    if compiler_extras:
+
+        extra_outFile = outFile.split("/") # split on forward slash
+        extra_outFile[-1] = '.'+extra_outFile[-1]
+        extra_outFile:str = '/'.join(extra_outFile)
+        
+        for line in lines:
+            line.lex()
+            line.parse()
+
+
+        #print(lines)
+        
+        with open(extra_outFile, 'wb') as f:
+            for line in lines:
+
+                f.write(bytes(line))
+                f.write("\n".encode('utf-8'))
+    
+
+    codeString = "\n".join([str(line)for line in lines])
 
     with open(outFile, 'w') as f:                                       # output cleaned code to file
         f.write(codeString)
+
     return outFile                                                      # return output file for other functions to reference

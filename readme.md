@@ -12,6 +12,7 @@ Commands List:
   clean: cleans out whitespace, comments, and strings
     options:
       -h : display options list and info about command
+      -l : list availabel commands
       -o <path.urcl> : delclare output file (default is ./out.urcl)
       -n : preserve original line number (used for debugging)
       -a : only allow ascii characters in strings

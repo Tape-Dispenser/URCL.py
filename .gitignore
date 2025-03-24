@@ -1,3 +1,5 @@
 test_files/
 __pycache__/
 output/
+core.*
+.vscode/

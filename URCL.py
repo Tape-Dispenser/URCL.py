@@ -1,5 +1,7 @@
 import sys,os,time
-import clean,lex,parse
+from clean import *
+from transpile import *
+from assemble import *
 
 def print_info():
     print('bruh more args pls') # TODO: make this print actual info
@@ -8,6 +10,7 @@ command = ""
 f = ""
 args = []
 
+# cli handling shit
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print_info()
@@ -30,31 +33,26 @@ if __name__ == "__main__":
 
 
 #parse command
+match command.lower():
+    case 'clean':
+        startTime = time.perf_counter_ns()
+        x = clean(f,args)
+        if x == 'error':
+            exit()
+        if os.path.isfile(x):
+            endTime = time.perf_counter_ns()
+            print(f"file successfully cleaned and outputted to \"{x}\" in {endTime-startTime} nanoseconds.")
+    
+    case 'transpile':
+        startTime = time.perf_counter_ns()
+        x = transpile(f,args)
+        if os.path.isfile(x):
+            endTime = time.perf_counter_ns()
+            print(f"file successfully transpiled and outputted to \"{x}\" in {endTime-startTime} nanoseconds.")
 
-if command == 'clean':
-    startTime = time.perf_counter()
-    x = clean.clean(f,args)
-    if x == 'error':
-        exit()
-    if os.path.isfile(x):
-        endTime = time.perf_counter()
-        print(f"file successfully cleaned and outputted to \"{x}\" in {endTime-startTime} seconds.")
-
-
-elif command == 'lex':
-    startTime = time.perf_counter()
-    x = lex.lex(f,args)
-    if x == 'error':
-        exit()
-    if os.path.isfile(x):
-        endTime = time.perf_counter()
-        print(f"file successfully lexed and outputted to \"{x}\" in {endTime-startTime} seconds.")
-
-elif command == 'parse':
-    startTime = time.perf_counter()
-    x = parse.parse(f,args)
-    if x == 'error':
-        exit()
-    if os.path.isfile(x):
-        endTime = time.perf_counter()
-        print(f"file successfully parsed and outputted to \"{x}\" in {endTime-startTime} seconds.")
+    case 'assemble':
+        startTime = time.perf_counter_ns()
+        x = assemble(f,args)
+        if os.path.isfile(x):
+            endTime = time.perf_counter_ns()
+            print(f"file successfully assembled and outputted to \"{x}\" in {endTime-startTime} nanoseconds.")
