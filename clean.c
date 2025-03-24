@@ -28,9 +28,8 @@ int lineNums = 0;
 // #############################   CODE  #############################
 
 char* clean(char* urclCode) {
-  // allocate output code to be the size of the input code
-  // array might need to be resized up if line numbers want to be added
-  char* cleanedURCL = malloc(sizeof(char)*strlen(urclCode));
+  char* workingCopy = malloc(sizeof(char)*strlen(urclCode));
+  strcpy(workingCopy, urclCode);
 
   // step one:   replace all strings with a replacement key (ex. &1, &2, &3, etc.)
   // source string must be put into a map
