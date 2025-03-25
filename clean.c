@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
   // write null terminator
   code[index] = 0;
 
-  printf("%s\n", code);
+  //printf("%s\n", code);
   fclose(urclFile);
   clean(code);
   exit(0);
