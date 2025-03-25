@@ -34,6 +34,55 @@ char* clean(char* urclCode) {
   // step one:   replace all strings with a replacement key (ex. &1, &2, &3, etc.)
   // source string must be put into a map
 
+  int inString = 0;
+  int inComment = 0;
+  int stringID = 0;
+  char* currentString;
+  int stringIndex;
+  size_t stringStart;
+  size_t stringEnd;
+
+  size_t index = 0;
+  char c = urclCode[index];
+  while (c != 0) {
+    c = urclCode[index];
+    if (inString == 1) {
+      currentString[stringIndex] = c;
+      stringIndex++;
+      currentString = realloc(currentString, (stringIndex + 1) * sizeof(char));
+      if (c == '"' || c == '\'') {
+        char prev = urclCode[index - 1];
+        if (prev != '\\') {
+          inString = 0;
+          currentString[stringIndex] = 0;
+          stringEnd = index;
+          printf("Found a string literal %s starting at character index %lu and ending at %lu.\n", currentString, stringStart, stringEnd);
+          // add string to map and replace with the string id (&1, &2, &3, etc.)
+        }
+      }
+      
+      
+    } else if (inComment == 1) {
+
+    } else {
+      if (c == '"' || c == '\'') {
+        // handle string literals and character literals at the same time
+        inString = 1;
+        currentString = malloc(2 * sizeof(char));
+        stringIndex = 0;
+        currentString[stringIndex] = c;
+        stringIndex++;
+        stringStart = index;
+      }
+    }  
+
+
+
+
+
+    index++;
+  }
+
   // step two:   add line numbers (ex. ADD R1 R2 R3 &L82)
 
   // step three: remove all inline "multiline" comments (example: ADD /* comment */ R1 R2 R3)
