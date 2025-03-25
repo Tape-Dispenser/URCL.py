@@ -1,21 +1,5 @@
-Command line syntax:
-
-```
-cd <directory to project root folder>
-
-./URCL.py [command] [file] [options]
-./URCL.py [command] : returns info about command
-./URCL.py : returns info about toolkit
-```
-
-Commands List:
-  clean: cleans out whitespace, comments, and strings
-    options:
-      -h : display options list and info about command
-      -l : list availabel commands
-      -o <path.urcl> : delclare output file (default is ./out.urcl)
-      -n : preserve original line number (used for debugging)
-      -a : only allow ascii characters in strings
+This is being reworked in C
+Command line syntax is changing
 
 Supported Macros:
   `@IMPORT <path.urcl> <name>`: imports all labels in <path.urcl> as `.<name>.label` (not implemented)
