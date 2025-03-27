@@ -1,3 +1,10 @@
 #!/bin/bash
 
-gcc -g ./clean.c ./lib/stringutils.c -o ./build/clean
+# debug
+gcc -Wall -Wextra -fsanitize=address -g ./clean.c ./lib/stringutils.c -o ./build/debug/clean
+
+# build
+gcc ./clean.c ./lib/stringutils.c -o ./build/clean
+
+# valgrind
+gcc -Wall -Wextra -g ./clean.c ./lib/stringutils.c -o ./build/debug/valgrind/clean

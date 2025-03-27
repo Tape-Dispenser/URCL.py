@@ -4,3 +4,4 @@ output/
 core.*
 .vscode/
 build/
+core/

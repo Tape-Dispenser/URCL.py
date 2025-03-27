@@ -45,16 +45,44 @@ int lineNums = 0;
 
 // #############################   CODE  #############################
 
-char* clean(char* urclCode) {
-  char* workingCopy = malloc(sizeof(char)*strlen(urclCode));
+void clean(char* urclCode) {
+  char* workingCopy = malloc(sizeof(char) * (strlen(urclCode) + 1));
   strcpy(workingCopy, urclCode);
 
   // step one:   add line numbers
   size_t index = 0;
   char c = workingCopy[index];
+  if (lineNums != 0) {
+    size_t lineCount = 0;
+    while (c != 0) {
+      if (c != '\n') {
+        index++;
+        c = workingCopy[index];
+        continue;
+      }
+      lineCount++;
+
+      // get length sprintf will return
+      FILE* devNull = fopen("/dev/null", "w");
+      size_t length = fprintf(devNull, "&L%lu", lineCount);
+      fclose(devNull);
+      // allocate memory for sprintf
+      char* lineMarker = malloc((length + 1) * sizeof(char));
+
+      sprintf(lineMarker, "&L%lu", lineCount);
+      char* temp = insertString(workingCopy, lineMarker, index);
+      free(workingCopy);
+      free(lineMarker);
+      workingCopy = temp;
+      temp = NULL;
+      index+=length+1;
+      c = workingCopy[index];
+    }
+  }
+  
 
 
-  // step two:   replace all strings with a replacement key (ex. &1, &2, &3, etc.), remove all multiline comments,
+  // step two:   replace all strings with a replacement key (ex. &S1, &S2, &S3, etc.), remove all multiline comments,
   //             source string must be put into a map
 
   int inString = 0;
@@ -82,6 +110,7 @@ char* clean(char* urclCode) {
           tokenEnd = index;
           // printf("Found a string literal %s starting at character index %lu and ending at %lu.\n", currentString, tokenStart, tokenEnd);
           // add string to map and replace with the string id (&1, &2, &3, etc.)
+          free(currentString);
         }
       }
       
@@ -103,10 +132,16 @@ char* clean(char* urclCode) {
           tokenIndex++;
         }
         if (containsNewline == 1) {
-          workingCopy = replaceString(workingCopy, "\n", tokenStart, tokenEnd);
+          char* temp = replaceString(workingCopy, "\n", tokenStart, tokenEnd);
+          free(workingCopy);
+          workingCopy = temp;
+          temp = NULL;
           index = tokenStart + 1;
         } else {
-          workingCopy = cutString(workingCopy, tokenStart, tokenEnd);
+          char* temp = cutString(workingCopy, tokenStart, tokenEnd);
+          free(workingCopy);
+          workingCopy = temp;
+          temp = NULL;
           index = tokenStart;
         }
         continue; // no need to increment index, it already points to the character immediately after the (now deleted) comment
@@ -140,6 +175,7 @@ char* clean(char* urclCode) {
 
 
     index++;
+    c = workingCopy[index];
   }
 
   // step two:   add line numbers (ex. ADD R1 R2 R3 &L82)
@@ -199,23 +235,27 @@ int main(int argc, char **argv) {
   FILE* urclFile = NULL;
   urclFile = fopen(argv[optind], "r");
   if (urclFile == NULL) {
-    printf("error no. %d while opening file \"%s\"\n", urclPath, errno);
+    printf("error no. %d while opening file \"%s\"\n", errno, urclPath);
   }
-  puts("urcl file contents:");
-  char c = 0;
+  free(urclPath);
+  int c;
   size_t index = 0;
   char* code = malloc(1 * sizeof(char));
-  while (c != EOF) {
-    c = fgetc(urclFile);
+  while ((c = fgetc(urclFile)) != EOF) {
     code = realloc(code, (index + 2) * sizeof(char)); // plus one for the null terminator, plus two for index -> size conversion
     code[index] = c;
     index++; // index now points to the next free character
   }
   // write null terminator
   code[index] = 0;
+  printf("Length of input code: %lu, char at end: '%c' (%u)\n", strlen(code), code[index], code[index]);
+  printf("Index: %lu\n", index);
 
   //printf("%s\n", code);
   fclose(urclFile);
   clean(code);
+
+
+  free(code);
   exit(0);
 }

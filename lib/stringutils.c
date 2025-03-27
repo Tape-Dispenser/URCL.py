@@ -116,7 +116,7 @@ char* insertString(char* base, char* insert, size_t insertIndex) {
   
   // calculate size of new buffer
   size_t insertLength = strlen(insert);
-  size_t newSize = originalLength + insertLength;
+  size_t newSize = originalLength + insertLength + 1;
   // create new buffer
   char* outputString = malloc(sizeof(char) * newSize);
 
@@ -150,4 +150,18 @@ char* insertString(char* base, char* insert, size_t insertIndex) {
   // write null terminator
   outputString[outputIndex] = 0;
   return outputString;
+}
+
+void printUntil(char* string, size_t stopIndex) {
+  // print until a specific index in given string (including pointed to character)
+  char* newstring = malloc((stopIndex+1) * sizeof(char));
+  size_t index = 0;
+  do {
+    newstring[index] = string[index];
+    index++;
+  } while (index < stopIndex);
+  newstring[index] = 0;
+  printf("%s\n", newstring);
+  free(newstring);
+  return;
 }
