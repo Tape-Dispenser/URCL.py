@@ -65,7 +65,7 @@ char* replaceString(char* base, char* replacement, size_t start, size_t end) {
   if (start > originalLen - 1 || end > originalLen - 1) { // index math
     return NULL;
   }
-  
+
   // calculate size of new buffer
   size_t replaceLength = strlen(replacement);
   size_t newSize = start + originalLen - end + replaceLength;
@@ -104,7 +104,50 @@ char* replaceString(char* base, char* replacement, size_t start, size_t end) {
   return outputString;
 }
 
-char* insertString(char* base, char* insert, size_t index) {
+char* insertString(char* base, char* insert, size_t insertIndex) {
   // insert string into base string starting at index
+  // inserting is very similar to replacing, you just have a replacement selection of zero length (start == end)
+
+  // sanity check inputs
+  size_t originalLength = strlen(base);
+  if (insertIndex > originalLength) {
+    return NULL;
+  }
   
+  // calculate size of new buffer
+  size_t insertLength = strlen(insert);
+  size_t newSize = originalLength + insertLength;
+  // create new buffer
+  char* outputString = malloc(sizeof(char) * newSize);
+
+  // copy starting part to output
+  size_t outputIndex = 0;
+  size_t partsIndex = 0;
+  while (outputIndex < insertIndex) {
+    char c = base[partsIndex];
+    outputString[outputIndex] = c;
+    partsIndex++;
+    outputIndex++;
+  }
+  // outputIndex now points to next free character in array
+  // copy replacement to output
+  partsIndex = 0;
+  while (partsIndex < insertLength) {
+    char c = insert[partsIndex];
+    outputString[outputIndex] = c;
+    partsIndex++;
+    outputIndex++;
+  }
+  // partsIndex now needs to point to the first character after the section of base to be deleted
+  // copy end of base to output
+  partsIndex = insertIndex;
+  while (partsIndex < originalLength) {
+    char c = base[partsIndex];
+    outputString[outputIndex] = c;
+    outputIndex++;
+    partsIndex++;
+  }
+  // write null terminator
+  outputString[outputIndex] = 0;
+  return outputString;
 }

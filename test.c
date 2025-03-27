@@ -12,5 +12,8 @@ int main() {
   new = replaceString(base, "\n", 7UL, 11UL);
   printf("replaced section in base string \"%s\", got \"%s\"\n", base, new);
 
+  new = insertString(base, " there", 5UL);
+  printf("inserted section in base string \"%s\", got \"%s\"\n", base, new);
+
   return 0;
 }

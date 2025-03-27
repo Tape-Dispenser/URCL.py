@@ -24,6 +24,7 @@
 #include <string.h>
 #include <errno.h>
 #include "lib/stringutils.h"
+#include "lib/map.h"
 
 
 
