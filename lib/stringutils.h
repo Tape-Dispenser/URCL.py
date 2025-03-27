@@ -1,7 +1,6 @@
 /*
- * map.h: Map library written for passphrase generator
+ * stringutils.h: Collection of string utilities I've written over time
  * Copyright (C) 2025, Ada Gramiak, <adadispenser@gmail.com>
- *   Special thanks to: Stella
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -17,24 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MAP_H
-#define MAP_H
+#ifndef STRINGUTILS_H
+#define STRINGUTILS_H
+#include <string.h>
 
-typedef struct CharMap {
-    char* keys;
-    char* values;
-} CharMap;
-
-struct CharMap empty_map();
-
-struct CharMap full_map(char* keys, char* values);
-
-int map_add(struct CharMap* map, char key, char value);
-
-int map_get(struct CharMap* map, char key, char* output);
-
-int map_update(struct CharMap* map, char key, char value);
-
-int map_delete(struct CharMap* map, char key);
+char* cutString(char* input, size_t start, size_t end);
 
 #endif
