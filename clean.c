@@ -136,7 +136,7 @@ void clean(char* urclCode) {
           free(workingCopy);
           workingCopy = temp;
           temp = NULL;
-          index = tokenStart + 1;
+          index = tokenStart;
         } else {
           char* temp = cutString(workingCopy, tokenStart, tokenEnd);
           free(workingCopy);
@@ -144,6 +144,7 @@ void clean(char* urclCode) {
           temp = NULL;
           index = tokenStart;
         }
+        index = tokenStart;
         continue; // no need to increment index, it already points to the character immediately after the (now deleted) comment
       }
 
@@ -170,10 +171,6 @@ void clean(char* urclCode) {
 
     }  
 
-
-
-
-
     index++;
     c = workingCopy[index];
   }
@@ -192,6 +189,7 @@ void clean(char* urclCode) {
 
   // step eight: output code
   printf("%s\n", workingCopy);
+  free(workingCopy);
 }
 
 
