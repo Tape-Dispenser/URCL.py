@@ -1,5 +1,5 @@
 /*
- * map.c: Map library written for passphrase generator
+ * map.c: Map library originally written for passphrase generator
  * Copyright (C) 2025, Ada Gramiak, <adadispenser@gmail.com>
  *   Special thanks to: Stella
  *
@@ -21,32 +21,35 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct CharMap {
-  char* keys;
-  char* values;
-} CharMap;
+typedef struct Map {
+  unsigned long* keys;
+  unsigned long* values;
+  size_t length;
+  size_t size;
+} Map;
 
 // create a new map with empty lists (map constructor)
-struct CharMap empty_map() {
-  struct CharMap map;
-  map.keys = malloc(sizeof(char));
-  map.keys[0] = 0;
-  map.values = malloc(sizeof(char));
-  map.values[0] = 0;
+struct Map empty_map() {
+  struct Map map;
+  map.size = sizeof(unsigned long);
+  map.keys = malloc(map.size);
+  map.values = malloc(map.size);
+  map.length = 0;
   return map;
 }
 
 // create a new map from two input strings (map constructor)
-struct CharMap full_map(char* keys, char* values) {
-  struct CharMap map;
+/*
+struct Map full_map(char* keys, char* values) {
+  struct Map map;
   if (strlen(keys) != strlen(values)) {
     map.keys = 0;
     map.values = 0;
     return map;
   }
 
-  map.keys = malloc((strlen(keys) + 1) * sizeof(char));
-  map.values = malloc((strlen(values) + 1) * sizeof(char));
+  map.keys = malloc((strlen(keys) + 1) * map->size);
+  map.values = malloc((strlen(values) + 1) * map->size);
 
   size_t len = strlen(keys);
 
@@ -59,13 +62,15 @@ struct CharMap full_map(char* keys, char* values) {
   // null terminator will be copied over in the loop
   return map;
 }
+*/
+
 
 // get value (input key)
-int map_get(struct CharMap* map, char key, char* output) {
+int mapGet(struct Map* map, unsigned long key, unsigned long* output) {
   // returns 0 on success
   // returns -1 if key-value pair does not exist in map
   int index = 0;
-  while (index < strlen(map->keys)) {
+  while (index < map->length) {
     if (map->keys[index] == key) {
       *output = map->values[index];
       return 0;
@@ -76,37 +81,35 @@ int map_get(struct CharMap* map, char key, char* output) {
 }
 
 // add key-value pair (input new key and new value)
-int map_add(struct CharMap* map, char key, char value) {
+int mapAdd(struct Map* map, unsigned long key, unsigned long value) {
   // returns 0 on success
   // returns -1 if key-value pair already exists in map
   char temp;
-  if (map_get(map, key, &temp) == 0) {
+  if (mapGet(map, key, &temp) == 0) {
     return -1;
   }
-  int map_len = strlen(map->keys);
-  map->keys = realloc(map->keys, (map_len + 2) * sizeof(char)); // map_len + 2 accounts for null terminator and the character to be added
+  
+  map->keys = realloc(map->keys, (map->length + 1) * map->size); // map_len + 1 accounts for the value to be added
   if (map->keys == 0) {
     printf("Error while reallocating memory for keys string!\n");
     return -1;
   }
-  map->keys[map_len] = key; // add key to keys
-  map->keys[map_len + 1] = 0; // add null terminator to keys
-  map->values = realloc(map->values, (map_len + 2) * sizeof(char));
+  map->keys[map->length] = key; // add key to keys
+  map->values = realloc(map->values, (map->length + 1) * map->size);
   if (map->keys == 0) {
     printf("Error while reallocating memory for values string!\n");
     return -1;
   }
-  map->values[map_len] = value;
-  map->values[map_len + 1] = 0;
+  map->values[map->length] = value;
   return 0;
 }
 
 // edit value in pair (input key and new value)
-int map_update(struct CharMap* map, char key, char value) {
+int mapUpdate(struct Map* map, unsigned long key, unsigned long value) {
   // returns 0 on success
   // returns -1 if key-value pair does not exist in map
   int index = 0;
-  while (index < strlen(map->keys)) {
+  while (index < map->length) {
     if (map->keys[index] == key) {
       map->values[index] = value;
       return 0;
@@ -117,11 +120,11 @@ int map_update(struct CharMap* map, char key, char value) {
 }
 
 // remove key-value pair (input key to remove)
-int map_delete(struct CharMap* map, char key) {
+int mapDelete(struct Map* map, unsigned long key) {
   // returns 0 on success
   // returns -1 if key-value pair does not exist in map
   int index = 0;
-  while (index < strlen(map->keys)) {
+  while (index < map->length) {
     if (!map->keys[index] == key) {
       index++;
       continue;
@@ -129,20 +132,20 @@ int map_delete(struct CharMap* map, char key) {
     // get index of last entry (strlen)
     int last_entry = strlen(map->keys);
     // overwrite the entry at index with the last entry in the map
-    map->keys[index] = map->keys[last_entry];
-    map->values[index] = map->values[last_entry];
+    map->keys[index] = map->keys[map->length];
+    map->values[index] = map->values[map->length];
     // overwrite the duplicate entry at the end of the map with a null terminator
-    map->keys[last_entry] = 0;
-    map->values[last_entry] = 0;
+    map->keys[map->length] = 0;
+    map->values[map->length] = 0;
     // shrink allocated memory size for string
     // original strlen will point to the last character of the original string, which is where the new null terminator will go,
     // therefore no pointer math is needed for malloc
-    map->keys = realloc(map->keys, last_entry * sizeof(char));
+    map->keys = realloc(map->keys, map->length * map->size);
     if (map->keys == 0) {
       printf("Error while reallocating memory for keys string!\n");
       return -1;
     }
-    map->values = realloc(map->values, last_entry * sizeof(char));
+    map->values = realloc(map->values, map->length * map->size);
     if (map->keys == 0) {
       printf("Error while reallocating memory for values string!\n");
       return -1;

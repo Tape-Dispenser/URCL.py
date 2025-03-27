@@ -19,22 +19,25 @@
 
 #ifndef MAP_H
 #define MAP_H
+#include <stddef.h>
 
-typedef struct CharMap {
-    char* keys;
-    char* values;
-} CharMap;
+typedef struct Map {
+  unsigned long* keys;
+  unsigned long* values;
+  size_t length;
+  size_t size;
+} Map;
 
-struct CharMap empty_map();
+struct Map empty_map();
 
-struct CharMap full_map(char* keys, char* values);
+//struct Map full_map(unsigned long keys, unsigned long* values);
 
-int map_add(struct CharMap* map, char key, char value);
+int mapAdd(struct Map* map, unsigned long key, unsigned long value);
 
-int map_get(struct CharMap* map, char key, char* output);
+int mapGet(struct Map* map, unsigned long key, unsigned long* output);
 
-int map_update(struct CharMap* map, char key, char value);
+int mapUpdate(struct Map* map, unsigned long key, unsigned long value);
 
-int map_delete(struct CharMap* map, char key);
+int mapDelete(struct Map* map, unsigned long key);
 
 #endif
