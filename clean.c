@@ -1,12 +1,28 @@
+/*
+ * clean.c: URCL Code cleaner, for use as the first step in a transpiler toolchain,
+ *          or as a standalone program
+ * Copyright (C) 2025, Ada Gramiak, <adadispenser@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <string.h>
 #include <errno.h>
-
-
-
 
 
 
@@ -39,8 +55,8 @@ char* clean(char* urclCode) {
   int stringID = 0;
   char* currentString;
   int stringIndex;
-  size_t stringStart;
-  size_t stringEnd;
+  size_t tokenStart;
+  size_t tokenEnd;
 
   size_t index = 0;
   char c = urclCode[index];
@@ -55,25 +71,42 @@ char* clean(char* urclCode) {
         if (prev != '\\') {
           inString = 0;
           currentString[stringIndex] = 0;
-          stringEnd = index;
-          printf("Found a string literal %s starting at character index %lu and ending at %lu.\n", currentString, stringStart, stringEnd);
+          tokenEnd = index;
+          printf("Found a string literal %s starting at character index %lu and ending at %lu.\n", currentString, tokenStart, tokenEnd);
           // add string to map and replace with the string id (&1, &2, &3, etc.)
         }
       }
       
       
     } else if (inComment == 1) {
+      if (c == '/' && urclCode[index-1] == '*') {
+        inComment = 0;
+        tokenEnd = index;
+        printf("Found a multiline comment starting at character index %lu and ending at %lu.\n", tokenStart, tokenEnd);
+        // delete comment
+      }
+
 
     } else {
-      if (c == '"' || c == '\'') {
-        // handle string literals and character literals at the same time
-        inString = 1;
-        currentString = malloc(2 * sizeof(char));
-        stringIndex = 0;
-        currentString[stringIndex] = c;
-        stringIndex++;
-        stringStart = index;
+      switch (c) {
+        case '"':
+        case '\'':
+          inString = 1;
+          currentString = malloc(2 * sizeof(char));
+          stringIndex = 0;
+          currentString[stringIndex] = c;
+          stringIndex++;
+          tokenStart = index;
+          break;
+        case '*':
+          if (urclCode[index-1] != '/') {
+            break;
+          }
+          inComment = 1;
+          tokenStart = index;
+          break;
       }
+
     }  
 
 
