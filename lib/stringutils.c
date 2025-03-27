@@ -52,3 +52,11 @@ char* cutString(char* input, size_t start, size_t end) {
   outputString[index] = 0;
   return outputString;
 }
+
+char* replaceString(char* base, char* replacement, size_t start, size_t end) {
+  // replace a section in base string with replacement string, resizing base as needed
+}
+
+char* insertString(char* base, char* insert, size_t index) {
+  // insert string into base string starting at index
+}

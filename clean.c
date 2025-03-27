@@ -44,10 +44,6 @@ int lineNums = 0;
 
 // #############################   CODE  #############################
 
-
-
-
-
 char* clean(char* urclCode) {
   char* workingCopy = malloc(sizeof(char)*strlen(urclCode));
   strcpy(workingCopy, urclCode);
