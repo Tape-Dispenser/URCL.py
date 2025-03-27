@@ -47,13 +47,15 @@ int lineNums = 0;
 
 char* clean(char* urclCode) {
   char* workingCopy = malloc(sizeof(char)*strlen(urclCode));
-  printf("%lu\n", strlen(urclCode));
   strcpy(workingCopy, urclCode);
 
-  // step one: add line numbers
+  // step one:   add line numbers
+  size_t index = 0;
+  char c = workingCopy[index];
 
-  // step one:   replace all strings with a replacement key (ex. &1, &2, &3, etc.), remove all multiline comments
-  // source string must be put into a map
+
+  // step two:   replace all strings with a replacement key (ex. &1, &2, &3, etc.), remove all multiline comments,
+  //             source string must be put into a map
 
   int inString = 0;
   int inComment = 0;
@@ -63,17 +65,17 @@ char* clean(char* urclCode) {
   size_t tokenStart;
   size_t tokenEnd;
 
-  size_t index = 0;
-  char c = urclCode[index];
+  index = 0;
+  c = workingCopy[index];
   while (c != 0) {
-    c = urclCode[index];
+    c = workingCopy[index];
 
     if (inString == 1) {
       currentString[stringIndex] = c;
       stringIndex++;
       currentString = realloc(currentString, (stringIndex + 1) * sizeof(char));
       if (c == '"' || c == '\'') {
-        char prev = urclCode[index - 1];
+        char prev = workingCopy[index - 1];
         if (prev != '\\') {
           inString = 0;
           currentString[stringIndex] = 0;
@@ -85,7 +87,7 @@ char* clean(char* urclCode) {
       
       
     } else if (inComment == 1) {
-      if (c == '/' && urclCode[index-1] == '*') {
+      if (c == '/' && workingCopy[index-1] == '*') {
         inComment = 0;
         tokenEnd = index;
         // delete comment
@@ -94,17 +96,17 @@ char* clean(char* urclCode) {
         size_t tokenIndex = tokenStart;
         int containsNewline = 0;
         while (tokenIndex <= tokenEnd) {
-          if (urclCode[tokenIndex] == '\n') {
+          if (workingCopy[tokenIndex] == '\n') {
             containsNewline = 1;
             break;
           }
           tokenIndex++;
         }
         if (containsNewline == 1) {
-          urclCode = replaceString(urclCode, "\n", tokenStart, tokenEnd);
+          workingCopy = replaceString(workingCopy, "\n", tokenStart, tokenEnd);
           index = tokenStart + 1;
         } else {
-          urclCode = cutString(urclCode, tokenStart, tokenEnd);
+          workingCopy = cutString(workingCopy, tokenStart, tokenEnd);
           index = tokenStart;
         }
         continue; // no need to increment index, it already points to the character immediately after the (now deleted) comment
@@ -123,7 +125,7 @@ char* clean(char* urclCode) {
           tokenStart = index;
           break;
         case '*':
-          if (urclCode[index-1] != '/') {
+          if (workingCopy[index-1] != '/') {
             break;
           }
           inComment = 1;
@@ -153,9 +155,7 @@ char* clean(char* urclCode) {
   // step seven: put all characters and strings back
 
   // step eight: output code
-  printf("%s\n", urclCode);
-  printf("%lu\n", strlen(urclCode));
-
+  printf("%s\n", workingCopy);
 }
 
 
