@@ -22,4 +22,6 @@
 
 char* cutString(char* input, size_t start, size_t end);
 
+char* replaceString(char* base, char* replacement, size_t start, size_t end);
+
 #endif

@@ -46,6 +46,7 @@ int lineNums = 0;
 
 char* clean(char* urclCode) {
   char* workingCopy = malloc(sizeof(char)*strlen(urclCode));
+  printf("%lu\n", strlen(urclCode));
   strcpy(workingCopy, urclCode);
 
   // step one: add line numbers
@@ -65,6 +66,7 @@ char* clean(char* urclCode) {
   char c = urclCode[index];
   while (c != 0) {
     c = urclCode[index];
+
     if (inString == 1) {
       currentString[stringIndex] = c;
       stringIndex++;
@@ -75,7 +77,7 @@ char* clean(char* urclCode) {
           inString = 0;
           currentString[stringIndex] = 0;
           tokenEnd = index;
-          printf("Found a string literal %s starting at character index %lu and ending at %lu.\n", currentString, tokenStart, tokenEnd);
+          // printf("Found a string literal %s starting at character index %lu and ending at %lu.\n", currentString, tokenStart, tokenEnd);
           // add string to map and replace with the string id (&1, &2, &3, etc.)
         }
       }
@@ -86,8 +88,24 @@ char* clean(char* urclCode) {
         inComment = 0;
         tokenEnd = index;
         // delete comment
-        urclCode = cutString(urclCode, tokenStart, tokenEnd);
-        index = tokenStart;
+        printf("Found a multiline comment starting at character index %lu and ending at %lu.\n", tokenStart, tokenEnd);
+        // if multiline contains a newline i need to replace the comment with a newline
+        size_t tokenIndex = tokenStart;
+        int containsNewline = 0;
+        while (tokenIndex <= tokenEnd) {
+          if (urclCode[tokenIndex] == '\n') {
+            containsNewline = 1;
+            break;
+          }
+          tokenIndex++;
+        }
+        if (containsNewline == 1) {
+          urclCode = replaceString(urclCode, "\n", tokenStart, tokenEnd);
+          index = tokenStart + 1;
+        } else {
+          urclCode = cutString(urclCode, tokenStart, tokenEnd);
+          index = tokenStart;
+        }
         continue; // no need to increment index, it already points to the character immediately after the (now deleted) comment
       }
 
@@ -135,6 +153,7 @@ char* clean(char* urclCode) {
 
   // step eight: output code
   printf("%s\n", urclCode);
+  printf("%lu\n", strlen(urclCode));
 
 }
 

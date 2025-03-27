@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 char* cutString(char* input, size_t start, size_t end) {
   // cut out a section from input string between start and end indeces (start and end index are both cut out)
@@ -55,8 +56,55 @@ char* cutString(char* input, size_t start, size_t end) {
 
 char* replaceString(char* base, char* replacement, size_t start, size_t end) {
   // replace a section in base string with replacement string, resizing base as needed
+
+  // sanity check inputs
+  if (start > end) {
+    return NULL;
+  }
+  size_t originalLen = strlen(base);
+  if (start > originalLen - 1 || end > originalLen - 1) { // index math
+    return NULL;
+  }
+  
+  // calculate size of new buffer
+  size_t replaceLength = strlen(replacement);
+  size_t newSize = start + originalLen - end + replaceLength;
+  // create new buffer
+  char* outputString = malloc(sizeof(char) * newSize);
+
+  // copy starting part to output
+  size_t outputIndex = 0;
+  size_t partsIndex = 0;
+  while (outputIndex < start) {
+    char c = base[partsIndex];
+    outputString[outputIndex] = c;
+    partsIndex++;
+    outputIndex++;
+  }
+  // outputIndex now points to next free character in array
+  // copy replacement to output
+  partsIndex = 0;
+  while (partsIndex < replaceLength) {
+    char c = replacement[partsIndex];
+    outputString[outputIndex] = c;
+    partsIndex++;
+    outputIndex++;
+  }
+  // partsIndex now needs to point to the first character after the section of base to be deleted
+  // copy end of base to output
+  partsIndex = end + 1;
+  while (partsIndex < originalLen) {
+    char c = base[partsIndex];
+    outputString[outputIndex] = c;
+    outputIndex++;
+    partsIndex++;
+  }
+  // write null terminator
+  outputString[outputIndex] = 0;
+  return outputString;
 }
 
 char* insertString(char* base, char* insert, size_t index) {
   // insert string into base string starting at index
+  
 }
